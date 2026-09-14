@@ -5,6 +5,23 @@ All notable changes to VelocityGlobalChat will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.6] — 2026-09-14
+
+### Fixed
+- CrossChat now processes `PlayerChatEvent` last so its cancellation cannot be overwritten by another proxy chat listener, preventing duplicate local-backend messages.
+
+### Changed
+- Updated the proxy version to `1.3.6`.
+
+## [1.3.5] — 2026-09-04
+
+### Fixed
+- Fixed mixed legacy `&` color codes and MiniMessage formatting so a prefix/suffix can safely combine both styles without losing or bleeding color state.
+- The parser now correctly closes legacy styling before switching into a MiniMessage segment, which fixes cases like legacy prefix + MiniMessage suffix.
+
+### Changed
+- Updated the proxy version to `1.3.5`.
+
 ## [1.3.4] — 2026-08-09
 
 ### Fixed
@@ -107,7 +124,9 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Maven build with Velocity annotation-processor-generated `velocity-plugin.json`
 - Compatible with Java 17+ and Velocity 3.x
 
-[Unreleased]: https://github.com/Ethan0892/CrossChat/compare/v1.3.4...HEAD
+[Unreleased]: https://github.com/Ethan0892/CrossChat/compare/v1.3.6...HEAD
+[1.3.6]: https://github.com/Ethan0892/CrossChat/compare/v1.3.5...v1.3.6
+[1.3.5]: https://github.com/Ethan0892/CrossChat/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/Ethan0892/CrossChat/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/Ethan0892/CrossChat/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/Ethan0892/CrossChat/compare/v1.3.1...v1.3.2

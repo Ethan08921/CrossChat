@@ -21,7 +21,7 @@ import java.nio.file.Path;
 @Plugin(
         id = "crosschat",
         name = "Crosschat",
-        version = "1.3.4",
+        version = "1.3.6",
         description = "Global cross-server chat for Velocity",
         authors = {"Ethan0892"}
 )

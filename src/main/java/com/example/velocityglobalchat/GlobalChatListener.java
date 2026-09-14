@@ -1,6 +1,7 @@
 package com.example.velocityglobalchat;
 
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -43,7 +44,7 @@ public class GlobalChatListener {
     // Event handler
     // -------------------------------------------------------------------------
 
-    @Subscribe
+    @Subscribe(order = PostOrder.LAST)
     public void onPlayerChat(PlayerChatEvent event) {
         if (!config.isEnabled()) return;
 
@@ -136,12 +137,140 @@ public class GlobalChatListener {
      *   <li>Legacy {@code &} codes — otherwise (the default config style)</li>
      * </ul>
      */
-    private static Component deserialize(String text) {
+    static Component deserialize(String text) {
         if (text.isEmpty()) return Component.empty();
-        if (MINI_MESSAGE_TAG.matcher(text).find()) {
-            return MINI_MESSAGE.deserialize(text);
+        if (!MINI_MESSAGE_TAG.matcher(text).find()) {
+            return LEGACY.deserialize(text);
         }
-        return LEGACY.deserialize(text);
+
+        StringBuilder mm = new StringBuilder(text.length() * 2);
+        String activeLegacy = null;
+
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+
+            if (ch == '&' && i + 1 < text.length()) {
+                String tag = legacyToMiniMessageTag(text, i);
+                if (tag != null) {
+                    if ("<reset>".equals(tag)) {
+                        if (activeLegacy != null) {
+                            mm.append(closeLegacyTag(activeLegacy));
+                            activeLegacy = null;
+                        }
+                        mm.append("<reset>");
+                        i++;
+                        continue;
+                    }
+                    if (activeLegacy != null && !activeLegacy.equals(tag)) {
+                        mm.append(closeLegacyTag(activeLegacy));
+                        activeLegacy = null;
+                    }
+                    mm.append(tag);
+                    activeLegacy = tag;
+                    i++;
+                    continue;
+                }
+            }
+
+            if (activeLegacy != null && ch == ' ') {
+                int next = i + 1;
+                while (next < text.length() && Character.isWhitespace(text.charAt(next))) {
+                    next++;
+                }
+                if (next < text.length() && text.charAt(next) == '<') {
+                    int end = text.indexOf('>', next);
+                    if (end > next) {
+                        String token = text.substring(next, end + 1);
+                        if (MINI_MESSAGE_TAG.matcher(token).matches()) {
+                            mm.append(closeLegacyTag(activeLegacy));
+                            activeLegacy = null;
+                            i = next - 1;
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            if (ch == '<') {
+                int end = text.indexOf('>', i);
+                if (end > i) {
+                    String token = text.substring(i, end + 1);
+                    if (MINI_MESSAGE_TAG.matcher(token).matches()) {
+                        if (activeLegacy != null) {
+                            mm.append(closeLegacyTag(activeLegacy));
+                            activeLegacy = null;
+                        }
+                        mm.append(token);
+                        i = end;
+                        continue;
+                    }
+                }
+            }
+
+            mm.append(ch);
+        }
+
+        if (activeLegacy != null) {
+            mm.append(closeLegacyTag(activeLegacy));
+        }
+
+        return MINI_MESSAGE.deserialize(mm.toString());
+    }
+
+    private static String legacyToMiniMessageTag(String text, int index) {
+        char code = Character.toLowerCase(text.charAt(index + 1));
+        return switch (code) {
+            case '0' -> "<black>";
+            case '1' -> "<dark_blue>";
+            case '2' -> "<dark_green>";
+            case '3' -> "<dark_aqua>";
+            case '4' -> "<dark_red>";
+            case '5' -> "<dark_purple>";
+            case '6' -> "<gold>";
+            case '7' -> "<gray>";
+            case '8' -> "<dark_gray>";
+            case '9' -> "<blue>";
+            case 'a' -> "<green>";
+            case 'b' -> "<aqua>";
+            case 'c' -> "<red>";
+            case 'd' -> "<light_purple>";
+            case 'e' -> "<yellow>";
+            case 'f' -> "<white>";
+            case 'k' -> "<obfuscated>";
+            case 'l' -> "<bold>";
+            case 'm' -> "<strikethrough>";
+            case 'n' -> "<underlined>";
+            case 'o' -> "<italic>";
+            case 'r' -> "<reset>";
+            default -> null;
+        };
+    }
+
+    private static String closeLegacyTag(String tag) {
+        return switch (tag) {
+            case "<black>" -> "</black>";
+            case "<dark_blue>" -> "</dark_blue>";
+            case "<dark_green>" -> "</dark_green>";
+            case "<dark_aqua>" -> "</dark_aqua>";
+            case "<dark_red>" -> "</dark_red>";
+            case "<dark_purple>" -> "</dark_purple>";
+            case "<gold>" -> "</gold>";
+            case "<gray>" -> "</gray>";
+            case "<dark_gray>" -> "</dark_gray>";
+            case "<blue>" -> "</blue>";
+            case "<green>" -> "</green>";
+            case "<aqua>" -> "</aqua>";
+            case "<red>" -> "</red>";
+            case "<light_purple>" -> "</light_purple>";
+            case "<yellow>" -> "</yellow>";
+            case "<white>" -> "</white>";
+            case "<obfuscated>" -> "</obfuscated>";
+            case "<bold>" -> "</bold>";
+            case "<strikethrough>" -> "</strikethrough>";
+            case "<underlined>" -> "</underlined>";
+            case "<italic>" -> "</italic>";
+            default -> "";
+        };
     }
 
     // -------------------------------------------------------------------------
